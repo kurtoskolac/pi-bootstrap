@@ -1,0 +1,17 @@
+name: Lint
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  ansible-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install linters
+        run: pip install ansible-lint yamllint
+      - name: yamllint
+        run: yamllint -d relaxed ansible
+      - name: ansible-lint
+        run: cd ansible && ansible-lint local.yml

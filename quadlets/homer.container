@@ -1,0 +1,16 @@
+[Unit]
+Description=Homer dashboard
+PartOf=homelab.target
+
+[Container]
+Image=docker.io/b4bz/homer:latest
+ContainerName=homer
+PublishPort=8090:8080
+Volume=%h/homer/assets:/www/assets:Z,U
+AutoUpdate=registry
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=homelab.target

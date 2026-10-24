@@ -1,0 +1,18 @@
+[Unit]
+Description=Picker (nginx static site)
+PartOf=homelab.target
+
+[Container]
+Image=docker.io/library/nginx:alpine
+ContainerName=picker
+PublishPort=8081:80
+Volume=%h/picker/html:/usr/share/nginx/html:ro
+LogDriver=json-file
+LogOpt=max-size=1m
+AutoUpdate=registry
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=homelab.target

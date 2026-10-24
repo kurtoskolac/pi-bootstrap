@@ -1,0 +1,10 @@
+---
+# Directories under $HOME that the containers bind-mount.
+# Contents (memos data, uploaded files) are NOT managed here, only created.
+quadlets_data_dirs:
+  - homer/assets
+  - memos/data
+  - filebrowser/files
+  - picker/html
+  - forgejo/data
+  - forgejo/config

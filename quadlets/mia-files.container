@@ -1,0 +1,19 @@
+[Unit]
+Description=dufs file server (mia-files)
+PartOf=homelab.target
+
+[Container]
+Image=docker.io/sigoden/dufs:latest
+ContainerName=mia-files
+PublishPort=8091:5000
+Volume=%h/filebrowser/files:/data
+# Secrets live outside the repo: see quadlets/dufs.env.example
+EnvironmentFile=%h/filebrowser/dufs.env
+Exec=/data -A
+AutoUpdate=registry
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=homelab.target

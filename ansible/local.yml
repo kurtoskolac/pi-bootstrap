@@ -1,0 +1,8 @@
+---
+# Entry point for ansible-pull. Runs against the Pi itself.
+- name: Configure homelab Pi
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  roles:
+    - quadlets

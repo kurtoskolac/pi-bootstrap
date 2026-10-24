@@ -1,0 +1,17 @@
+[Unit]
+Description=PairDrop
+PartOf=homelab.target
+
+[Container]
+Image=ghcr.io/schlagmichdoch/pairdrop:latest
+ContainerName=pairdrop
+PublishPort=8093:3000
+Environment=TZ=Europe/Belgrade
+Environment=RATE_LIMIT=true
+AutoUpdate=registry
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=homelab.target

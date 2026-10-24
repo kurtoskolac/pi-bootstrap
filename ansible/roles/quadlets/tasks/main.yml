@@ -1,0 +1,50 @@
+---
+- name: Enable lingering so user services run without a login session
+  ansible.builtin.command: "loginctl enable-linger {{ ansible_user_id }}"
+  args:
+    creates: "/var/lib/systemd/linger/{{ ansible_user_id }}"
+  become: true
+
+- name: Create systemd and Quadlet directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ ansible_user_dir }}/.config/containers/systemd"
+    - "{{ ansible_user_dir }}/.config/systemd/user"
+
+- name: Create data directories for containers
+  ansible.builtin.file:
+    path: "{{ ansible_user_dir }}/{{ item }}"
+    state: directory
+    mode: "0755"
+  loop: "{{ quadlets_data_dirs }}"
+
+- name: Install homelab.target
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../systemd/homelab.target"
+    dest: "{{ ansible_user_dir }}/.config/systemd/user/homelab.target"
+    mode: "0644"
+  notify: Reload user systemd
+
+- name: Install Quadlet units
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "{{ ansible_user_dir }}/.config/containers/systemd/{{ item | basename }}"
+    mode: "0644"
+  with_fileglob:
+    - "{{ playbook_dir }}/../quadlets/*.container"
+  notify: Reload user systemd
+
+- name: Apply pending systemd reload before starting anything
+  ansible.builtin.meta: flush_handlers
+
+- name: Enable and start the homelab target
+  ansible.builtin.systemd:
+    name: homelab.target
+    scope: user
+    enabled: true
+    state: started
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_user_uid }}"

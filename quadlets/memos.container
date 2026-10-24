@@ -1,0 +1,16 @@
+[Unit]
+Description=Memos notes
+PartOf=homelab.target
+
+[Container]
+Image=docker.io/neosmemo/memos:stable
+ContainerName=memos
+PublishPort=5230:5230
+Volume=%h/memos/data:/var/opt/memos
+AutoUpdate=registry
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=homelab.target

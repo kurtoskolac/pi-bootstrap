@@ -43,3 +43,35 @@ Run it as your normal user, not root. It calls `sudo` only where needed.
 ## License
 
 MIT
+## Deploying the stack (Quadlets + Ansible)
+
+`quadlets/` holds the container units, `systemd/homelab.target` groups them,
+and `ansible/` deploys everything to `~/.config/...` on the Pi.
+
+One-time prep on the Pi:
+
+```
+sudo apt install ansible-core git
+cp quadlets/dufs.env.example ~/filebrowser/dufs.env   # then edit it
+```
+
+Apply the repo to the Pi (it pulls and configures itself):
+
+```
+ansible-pull -U https://github.com/kurtoskolac/pi-bootstrap.git ansible/local.yml
+```
+
+Or from a local clone:
+
+```
+cd ansible && ansible-playbook local.yml
+```
+
+Check what's running:
+
+```
+systemctl --user status homelab.target
+podman ps
+```
+
+Secrets (`*.env`) are never committed. Only `*.env.example` files are.

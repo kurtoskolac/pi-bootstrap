@@ -48,3 +48,17 @@
     state: started
   environment:
     XDG_RUNTIME_DIR: "/run/user/{{ ansible_user_uid }}"
+
+# dufs.env holds the file-server password and is created by hand on the Pi
+# (it is never committed, see quadlets/dufs.env.example). Keep it readable by
+# the owner only. Skipped when the file doesn't exist yet.
+- name: Check whether the dufs env file exists
+  ansible.builtin.stat:
+    path: "{{ ansible_user_dir }}/filebrowser/dufs.env"
+  register: quadlets_dufs_env
+
+- name: Restrict dufs env file to owner only
+  ansible.builtin.file:
+    path: "{{ ansible_user_dir }}/filebrowser/dufs.env"
+    mode: "0600"
+  when: quadlets_dufs_env.stat.exists

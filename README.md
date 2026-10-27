@@ -9,7 +9,7 @@ with one script. Built on a Raspberry Pi 3B (1 GB RAM) running rootless Podman.
 Every step is **idempotent** (safe to re-run) and supports **`--dry-run`**, so you
 can see exactly what would change before anything does.
 
-> **Status:** early development. Only the preflight step exists so far.
+> **Status:** early development. `bootstrap.sh` only has the `preflight` step so far. The Quadlet stack, the journald cap and the nightly restic backup are applied by the Ansible roles in `ansible/`. See [RECOVERY.md](RECOVERY.md) for rebuild steps and known gaps.
 
 ## Usage
 

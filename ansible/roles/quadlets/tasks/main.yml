@@ -14,11 +14,12 @@
     - "{{ ansible_user_dir }}/.config/containers/systemd"
     - "{{ ansible_user_dir }}/.config/systemd/user"
 
-- name: Create data directories for containers
+# No mode on purpose: rootless Podman (the :U volume option) chowns these to a
+# mapped sub-UID, so chmod from the host user fails with EPERM. Only ensure they exist.
+- name: Create data directories for containers  # noqa: risky-file-permissions
   ansible.builtin.file:
     path: "{{ ansible_user_dir }}/{{ item }}"
     state: directory
-    mode: "0755"
   loop: "{{ quadlets_data_dirs }}"
 
 - name: Install homelab.target

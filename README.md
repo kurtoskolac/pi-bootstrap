@@ -82,3 +82,11 @@ The `system` Ansible role installs a journald drop-in that caps the systemd
 journal at 20 MB (`ansible/roles/system/files/journald-sdcard.conf`).
 
 Backups and rebuild instructions: see [RECOVERY.md](RECOVERY.md).
+
+## Ansible roles
+
+| Role | What it does |
+|------|--------------|
+| `quadlets` | Container units (homer, memos, dufs, pairdrop, picker, Forgejo), `homelab.target`, data folders, linger |
+| `system` | OS tuning: journald cap to spare the SD card |
+| `backup` | Nightly encrypted restic backup of container data, via a systemd timer |

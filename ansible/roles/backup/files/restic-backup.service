@@ -1,0 +1,8 @@
+[Unit]
+Description=Nightly encrypted restic backup of homelab data
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/restic-backup.sh
+Nice=10
+IOSchedulingClass=idle

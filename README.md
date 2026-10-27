@@ -80,3 +80,5 @@ Secrets (`*.env`) are never committed. Only `*.env.example` files are.
 
 The `system` Ansible role installs a journald drop-in that caps the systemd
 journal at 20 MB (`ansible/roles/system/files/journald-sdcard.conf`).
+
+Backups and rebuild instructions: see [RECOVERY.md](RECOVERY.md).

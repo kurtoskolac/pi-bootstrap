@@ -1,0 +1,72 @@
+---
+- name: Install restic
+  ansible.builtin.apt:
+    name: restic
+    state: present
+    update_cache: true
+    cache_valid_time: 86400
+  become: true
+
+- name: Create backup directories
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    mode: "{{ item.mode }}"
+  loop:
+    - { path: "{{ ansible_user_dir }}/.local/bin", mode: "0755" }
+    - { path: "{{ ansible_user_dir }}/.config/restic", mode: "0700" }
+    - { path: "{{ ansible_user_dir }}/.config/systemd/user", mode: "0755" }
+
+- name: Install the backup script
+  ansible.builtin.copy:
+    src: restic-backup.sh
+    dest: "{{ ansible_user_dir }}/.local/bin/restic-backup.sh"
+    mode: "0755"
+
+- name: Install the backup service and timer
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "{{ ansible_user_dir }}/.config/systemd/user/{{ item }}"
+    mode: "0644"
+  loop:
+    - restic-backup.service
+    - restic-backup.timer
+  notify: Reload user systemd for backup
+
+- name: Apply pending systemd reload before enabling the timer
+  ansible.builtin.meta: flush_handlers
+
+- name: Enable and start the nightly backup timer
+  ansible.builtin.systemd:
+    name: restic-backup.timer
+    scope: user
+    enabled: true
+    state: started
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_user_uid }}"
+  # In --check mode the unit file isn't really installed yet.
+  ignore_errors: "{{ ansible_check_mode }}"
+
+- name: Look for the private restic settings
+  ansible.builtin.stat:
+    path: "{{ ansible_user_dir }}/.config/restic/restic.env"
+  register: backup_restic_env
+
+- name: Lock down the restic settings and password (owner only)
+  ansible.builtin.file:
+    path: "{{ item }}"
+    mode: "0600"
+  loop:
+    - "{{ ansible_user_dir }}/.config/restic/restic.env"
+    - "{{ ansible_user_dir }}/.config/restic/password"
+  when: backup_restic_env.stat.exists
+  failed_when: false
+
+- name: Remind about the missing private settings
+  ansible.builtin.debug:
+    msg: >-
+      Backups are installed but NOT configured. Copy
+      ansible/roles/backup/files/restic.env.example to
+      ~/.config/restic/restic.env, edit it, and create the password file
+      (see RECOVERY.md). The timer will fail until you do.
+  when: not backup_restic_env.stat.exists

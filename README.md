@@ -75,3 +75,8 @@ podman ps
 ```
 
 Secrets (`*.env`) are never committed. Only `*.env.example` files are.
+
+## SD card longevity
+
+The `system` Ansible role installs a journald drop-in that caps the systemd
+journal at 20 MB (`ansible/roles/system/files/journald-sdcard.conf`).

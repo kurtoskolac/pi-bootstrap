@@ -2,24 +2,45 @@
 
 This repo is a **recipe**, not a disk image. It rebuilds the *configuration* of
 the Pi. The *data* (notes, files, secrets) is deliberately not here, because
-the repo is public. It lives in an encrypted restic backup whose destination
-and password are stored privately on the Pi and in your password manager.
+the repo is public. It lives in an encrypted restic backup.
+
+## How the backup works
+
+```
+ Pi (nightly, automatic)                     Mac (you run it, whenever you like)
+ -----------------------                     -----------------------------------
+ restic-backup.timer, ~03:30                 scripts/pull-backup.sh
+   -> encrypted snapshot into                  -> copies that repository over SSH
+      ~/backups/restic on the Pi                  to ~/pi-backups/restic
+```
+
+- The Pi **never connects to the Mac**. The only connection is Mac to Pi over
+  SSH, the same direction as your normal login. No USB drive is needed.
+- The repository is encrypted with a password only you hold, so the copy is
+  unreadable without it.
+- Snapshots are incremental: after the first full copy, each run only stores
+  what changed. Retention: 7 daily, 4 weekly, 6 monthly.
+- memos (and Forgejo, once running) are stopped for a few seconds during the
+  copy so their SQLite databases are consistent, then started again.
+
+**Important:** until you run `scripts/pull-backup.sh`, the only copy lives on
+the Pi's own SD card, so a dead card would take it too. Pull a copy to the Mac
+regularly (for example weekly, and after anything important).
 
 | What | Where it lives | Restored by |
 |------|----------------|-------------|
 | OS packages, containers, timers, journald | this repo | `ansible-playbook` |
-| memos notes, dufs files, homer config, Forgejo repos, `dufs.env` | restic backup | `restic restore` |
+| memos notes, dufs files, homer config, Forgejo repos, `dufs.env` | restic repo (Pi, plus your Mac copy) | `restic restore` |
 | restic repository password | **your password manager** | you |
 
 ## One-time: set up backups
 
 Run on the Pi after the `backup` role has been applied.
 
-1. Pick the destination and edit the settings file:
+1. Create the settings file (replace `kurtoskolac` if your user differs):
 
-       mkdir -p ~/.config/restic
        cp ~/pi-bootstrap/ansible/roles/backup/files/restic.env.example ~/.config/restic/restic.env
-       nano ~/.config/restic/restic.env      # set RESTIC_REPOSITORY and the path to your home
+       sed -i "s#CHANGE_ME#$USER#g" ~/.config/restic/restic.env
 
 2. Create the repository password and **save a copy in your password manager**:
 
@@ -33,11 +54,18 @@ Run on the Pi after the `backup` role has been applied.
        set -a; . ~/.config/restic/restic.env; set +a
        restic snapshots
 
-4. The timer then runs it every night at about 03:30 (`systemctl --user list-timers`).
-   Check the last run with `journalctl --user -u restic-backup.service -n 30`.
+4. From now on the timer runs it every night (`systemctl --user list-timers`).
+   See the last run with `journalctl --user -u restic-backup.service -n 30`.
 
-memos (and Forgejo, once running) are stopped for a few seconds during the
-copy so their SQLite databases are consistent, then started again.
+## Pull a copy to your Mac
+
+On the Mac, from your clone of this repo:
+
+    ./scripts/pull-backup.sh
+
+It refuses to run if the Pi has no repository (so an empty, freshly flashed Pi
+can never overwrite your good copy). To check the copy: `brew install restic`,
+then `restic -r ~/pi-backups/restic snapshots` and enter the password.
 
 ## Rebuild after a dead SD card
 
@@ -50,7 +78,7 @@ copy so their SQLite databases are consistent, then started again.
 3. **Install the tools** (podman is not installed by the repo yet, see
    "Known gaps"):
 
-       sudo apt update && sudo apt install -y git ansible-core podman
+       sudo apt update && sudo apt install -y git ansible-core podman restic
 
 4. **Apply the repo:**
 
@@ -58,14 +86,18 @@ copy so their SQLite databases are consistent, then started again.
        cd ~/pi-bootstrap/ansible
        ansible-playbook local.yml --diff -K
 
-5. **Restore the private files** by hand (they are never in git):
+5. **Put the backup repository back on the Pi.** On the Mac (this pushes from
+   the Mac to the Pi, the Pi never connects out):
 
-       mkdir -p ~/.config/restic
-       nano ~/.config/restic/restic.env       # same destination as before
+       rsync -av ~/pi-backups/restic/ kurtoskolac@mia-search.local:backups/restic/
+
+6. **Restore the private settings** on the Pi (they are never in git):
+
+       nano ~/.config/restic/restic.env       # copy of restic.env.example, as in "One-time" step 1
        nano ~/.config/restic/password         # paste the password from your password manager
        chmod 600 ~/.config/restic/*
 
-6. **Restore the data.** Stop the services, restore, start them again.
+7. **Restore the data.** Stop the services, restore, start them again.
    `podman unshare` makes restic run inside Podman's user namespace so the
    container-owned files get their original owners back:
 
@@ -77,7 +109,7 @@ copy so their SQLite databases are consistent, then started again.
    To restore only one thing, add `--include /home/kurtoskolac/memos/data`.
    To restore an older snapshot, use its ID from `restic snapshots` instead of `latest`.
 
-7. **Verify:** `podman ps`, then open each service in a browser.
+8. **Verify:** `podman ps`, then open each service in a browser.
 
 ## Known gaps
 
@@ -86,5 +118,8 @@ Not automated yet, so after a rebuild they still need doing by hand:
 - Installing `podman` (planned `packages` step in `bootstrap.sh`).
 - Enabling the Podman auto-update timer: `systemctl --user enable --now podman-auto-update.timer`.
 - SSH hardening, log2ram and zram (planned `ssh-hardening` and `storage` steps).
+- Pulling the backup to the Mac is manual. If you forget, the newest data
+  exists only on the Pi's card.
+- Nothing alerts you if the nightly timer stops working.
 - The first run of this whole procedure on a clean card has not been tested yet.
   Do it once on a spare SD card and fix whatever breaks.

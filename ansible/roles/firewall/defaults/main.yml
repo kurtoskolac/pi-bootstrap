@@ -1,0 +1,39 @@
+---
+# SAFETY SWITCH. With false (the default) the rules are loaded but ufw is NOT
+# switched on, so a first run can never lock you out. Switch it on once you
+# have reviewed the rules (see SECURITY.md / README):
+#   ansible-playbook local.yml -K -e firewall_enable=true
+firewall_enable: false
+
+# The SSH port. Must be in firewall_lan_tcp_ports (the role refuses otherwise).
+firewall_ssh_port: 22
+
+# TCP ports reachable from the LAN. Keep in sync with the PublishPort= lines
+# in quadlets/*.container.
+firewall_lan_tcp_ports:
+  - 22     # ssh
+  - 8081   # picker
+  - 8090   # homer
+  - 8091   # dufs (mia-files)
+  - 8093   # pairdrop
+  - 5230   # memos
+  - 8094   # forgejo web
+  - 2222   # forgejo git over ssh
+
+# Your IPv4 subnet, worked out from the Pi's own address (e.g. 192.168.1.0/24).
+firewall_lan_cidr: "{{ ansible_default_ipv4.network }}/{{ ansible_default_ipv4.prefix }}"
+
+# Who counts as "the LAN":
+#   - the IPv4 subnet above
+#   - fe80::/10, IPv6 link-local (your Mac may SSH in this way: the Pi's login
+#     banner shows 'from fe80::...')
+#   - fc00::/7, IPv6 unique-local addresses
+# Add more here, e.g. your router's global IPv6 prefix (a /64) if your Mac
+# reaches the Pi over a global IPv6 address.
+firewall_lan_sources:
+  - "{{ firewall_lan_cidr }}"
+  - "fe80::/10"
+  - "fc00::/7"
+
+# off | low | medium | high. 'low' logs blocked packets (rate limited).
+firewall_logging: low

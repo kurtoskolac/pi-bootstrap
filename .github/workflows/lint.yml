@@ -4,13 +4,19 @@ on:
   push:
   pull_request:
 
+# The workflow only reads the repo; it never needs write access.
+permissions:
+  contents: read
+
 jobs:
   ansible-lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Install linters
-        run: pip install ansible-lint yamllint
+        # 'ansible' (not just ansible-core) brings community.general, which
+        # the firewall role uses.
+        run: pip install ansible ansible-lint yamllint
       - name: yamllint
         run: yamllint -d relaxed ansible
       - name: ansible-lint

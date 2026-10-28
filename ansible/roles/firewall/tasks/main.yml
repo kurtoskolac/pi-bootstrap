@@ -1,0 +1,68 @@
+---
+- name: Refuse to continue without an SSH rule
+  ansible.builtin.assert:
+    that:
+      - firewall_ssh_port | int in firewall_lan_tcp_ports | map('int') | list
+    fail_msg: >-
+      firewall_lan_tcp_ports must include the SSH port
+      ({{ firewall_ssh_port }}). Without it, enabling the firewall would lock
+      you out of the Pi.
+    quiet: true
+
+- name: Install ufw
+  ansible.builtin.apt:
+    name: ufw
+    state: present
+    update_cache: true
+    cache_valid_time: 86400
+  become: true
+
+- name: Default policy, incoming traffic is denied
+  community.general.ufw:
+    direction: incoming
+    default: deny
+  become: true
+
+- name: Default policy, outgoing traffic is allowed
+  community.general.ufw:
+    direction: outgoing
+    default: allow
+  become: true
+
+# SSH is rate limited (6 new connections per 30 s per source); the other
+# ports are plain allows. Each rule is added once per LAN source.
+- name: Allow the service ports from the LAN
+  community.general.ufw:
+    rule: "{{ 'limit' if item.1 | int == firewall_ssh_port | int else 'allow' }}"
+    proto: tcp
+    port: "{{ item.1 }}"
+    from_ip: "{{ item.0 }}"
+    comment: "LAN tcp/{{ item.1 }}"
+  loop: "{{ firewall_lan_sources | product(firewall_lan_tcp_ports) | list }}"
+  become: true
+
+- name: Allow mDNS from the LAN (so mia-search.local keeps resolving)
+  community.general.ufw:
+    rule: allow
+    proto: udp
+    port: "5353"
+    from_ip: "{{ item }}"
+    comment: LAN mDNS
+  loop: "{{ firewall_lan_sources }}"
+  become: true
+
+- name: Switch the firewall on
+  community.general.ufw:
+    state: enabled
+    logging: "{{ firewall_logging }}"
+  become: true
+  when: firewall_enable | bool
+
+- name: Remind that the firewall is not switched on yet
+  ansible.builtin.debug:
+    msg: >-
+      Firewall rules are loaded but ufw is NOT enabled. Review them with
+      'sudo ufw show added', keep this SSH session open, then enable with
+      -e firewall_enable=true and test a NEW SSH session before closing the
+      old one. Undo with 'sudo ufw disable'.
+  when: not (firewall_enable | bool)

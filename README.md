@@ -88,5 +88,5 @@ Backups and rebuild instructions: see [RECOVERY.md](RECOVERY.md).
 | Role | What it does |
 |------|--------------|
 | `quadlets` | Container units (homer, memos, dufs, pairdrop, picker, Forgejo), `homelab.target`, data folders, linger |
-| `system` | OS tuning: journald cap to spare the SD card |
+| `system` | OS tuning: journald cap, cleanup of legacy WiFi power-save service |
 | `backup` | Nightly encrypted restic backup of container data, via a systemd timer |

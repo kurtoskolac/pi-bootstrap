@@ -15,3 +15,26 @@
     mode: "0644"
   become: true
   notify: Restart journald
+
+# Cleans up a legacy manual setup where WiFi power-save was disabled.
+# Since WiFi is disabled via dtoverlay, this service fails every boot with "No such device".
+- name: Check if legacy wifi-powersave-off.service exists
+  ansible.builtin.stat:
+    path: /etc/systemd/system/wifi-powersave-off.service
+  register: wifi_powersave_file
+
+- name: Disable broken wifi-powersave-off.service
+  ansible.builtin.systemd:
+    name: wifi-powersave-off.service
+    enabled: false
+    state: stopped
+  become: true
+  when: wifi_powersave_file.stat.exists
+
+- name: Remove broken wifi-powersave-off.service file
+  ansible.builtin.file:
+    path: /etc/systemd/system/wifi-powersave-off.service
+    state: absent
+  become: true
+  when: wifi_powersave_file.stat.exists
+  notify: Reload systemd

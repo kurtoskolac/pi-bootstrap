@@ -21,7 +21,7 @@
 - name: Check if legacy wifi-powersave-off.service exists
   ansible.builtin.stat:
     path: /etc/systemd/system/wifi-powersave-off.service
-  register: wifi_powersave_file
+  register: system_wifi_powersave_file
 
 - name: Disable broken wifi-powersave-off.service
   ansible.builtin.systemd:
@@ -29,7 +29,7 @@
     enabled: false
     state: stopped
   become: true
-  when: wifi_powersave_file.stat.exists
+  when: system_wifi_powersave_file.stat.exists
   changed_when: false
 
 - name: Remove broken wifi-powersave-off.service file
@@ -37,5 +37,5 @@
     path: /etc/systemd/system/wifi-powersave-off.service
     state: absent
   become: true
-  when: wifi_powersave_file.stat.exists
+  when: system_wifi_powersave_file.stat.exists
   notify: Reload systemd

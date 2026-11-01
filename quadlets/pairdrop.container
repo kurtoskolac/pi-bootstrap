@@ -5,6 +5,7 @@ PartOf=homelab.target
 [Container]
 Image=ghcr.io/schlagmichdoch/pairdrop:latest
 ContainerName=pairdrop
+PodmanArgs=--memory-reservation=96m
 PublishPort=8093:3000
 Environment=TZ=Europe/Belgrade
 Environment=RATE_LIMIT=true

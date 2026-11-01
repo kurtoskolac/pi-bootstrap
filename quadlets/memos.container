@@ -5,6 +5,7 @@ PartOf=homelab.target
 [Container]
 Image=docker.io/neosmemo/memos:stable
 ContainerName=memos
+PodmanArgs=--memory-reservation=96m
 PublishPort=5230:5230
 Volume=%h/memos/data:/var/opt/memos
 AutoUpdate=registry

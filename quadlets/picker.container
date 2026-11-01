@@ -5,6 +5,7 @@ PartOf=homelab.target
 [Container]
 Image=docker.io/library/nginx:alpine
 ContainerName=picker
+PodmanArgs=--memory-reservation=96m
 PublishPort=8081:80
 Volume=%h/picker/html:/usr/share/nginx/html:ro
 LogDriver=json-file

@@ -5,6 +5,7 @@ PartOf=homelab.target
 [Container]
 Image=docker.io/sigoden/dufs:latest
 ContainerName=mia-files
+PodmanArgs=--memory-reservation=96m
 PublishPort=8091:5000
 Volume=%h/filebrowser/files:/data
 # Secrets live outside the repo: see quadlets/dufs.env.example

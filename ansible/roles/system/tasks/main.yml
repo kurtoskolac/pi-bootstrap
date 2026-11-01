@@ -30,6 +30,7 @@
     state: stopped
   become: true
   when: wifi_powersave_file.stat.exists
+  changed_when: false
 
 - name: Remove broken wifi-powersave-off.service file
   ansible.builtin.file:

@@ -9,4 +9,5 @@
     - system
     - backup
     - firewall
-    - fail2ban
+    - role: fail2ban
+      become: true

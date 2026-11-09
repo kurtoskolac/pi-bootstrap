@@ -9,7 +9,7 @@ with one script. Built on a Raspberry Pi 3B (1 GB RAM) running rootless Podman.
 Every step is **idempotent** (safe to re-run) and supports **`--dry-run`**, so you
 can see exactly what would change before anything does.
 
-> **Status:** early development. `bootstrap.sh` only has the `preflight` step so far. The Quadlet stack, the journald cap and the nightly restic backup are applied by the Ansible roles in `ansible/`. See [RECOVERY.md](RECOVERY.md) for rebuild steps and known gaps.
+> **Status:** active development. `bootstrap.sh` currently handles `preflight`. The full homelab stack (Quadlets, system tuning, restic backups, UFW firewall, and Fail2ban) is deployed via the Ansible roles in `ansible/`. See [RECOVERY.md](RECOVERY.md) for rebuild steps and known gaps.
 
 ## Usage
 
@@ -76,7 +76,7 @@ podman ps
 
 Secrets (`*.env`) are never committed. Only `*.env.example` files are.
 
-## SD card longevity
+## Hardening & Longevity
 
 The `system` Ansible role installs a journald drop-in that caps the systemd
 journal at 20 MB (`ansible/roles/system/files/journald-sdcard.conf`).
@@ -91,3 +91,12 @@ Backups and rebuild instructions: see [RECOVERY.md](RECOVERY.md).
 | `system` | OS tuning: journald cap, cleanup of legacy WiFi power-save service |
 | `backup` | Nightly encrypted restic backup of container data, via a systemd timer |
 | `fail2ban` | Installs and configures Fail2ban (SSH jail) using the systemd journal backend to protect against brute-force attacks without SD card wear
+
+### Security
+- **UFW Firewall**: Default deny incoming, allow outgoing. Only specific LAN subnets can access the services (staged safely so you don't lock yourself out).
+- **Fail2ban**: Watches the systemd journal for SSH brute-force attempts. Uses the \`systemd\` backend to avoid polling log files, saving SD card writes.
+- **Rootless Podman**: Containers run without root privileges via systemd Quadlets.
+
+### SD Card Protection
+- **Journald Cap**: System logs are capped at 20 MB via a drop-in file (\`SystemMaxUse=20M\`).
+- **ZRAM Swap**: Swap is compressed in RAM using \`lz4\`, preventing swap thrashing on the SD card.

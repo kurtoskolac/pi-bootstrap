@@ -90,3 +90,4 @@ Backups and rebuild instructions: see [RECOVERY.md](RECOVERY.md).
 | `quadlets` | Container units (homer, memos, dufs, pairdrop, picker, Forgejo), `homelab.target`, data folders, linger |
 | `system` | OS tuning: journald cap, cleanup of legacy WiFi power-save service |
 | `backup` | Nightly encrypted restic backup of container data, via a systemd timer |
+| `fail2ban` | Installs and configures Fail2ban (SSH jail) using the systemd journal backend to protect against brute-force attacks without SD card wear

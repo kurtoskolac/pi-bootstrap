@@ -1,0 +1,17 @@
+# /etc/fail2ban/jail.local
+# Configured for zero-trust, SD-card friendly operation.
+
+[DEFAULT]
+bantime  = {{ fail2ban_bantime }}
+findtime = {{ fail2ban_findtime }}
+maxretry = {{ fail2ban_maxretry }}
+
+# Use systemd journal instead of /var/log/auth.log to protect the SD card
+backend  = systemd
+
+# Never ban localhost
+ignoreip = 127.0.0.1/8 ::1
+
+[sshd]
+enabled = true
+port    = ssh

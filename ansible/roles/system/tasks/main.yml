@@ -39,3 +39,10 @@
   become: true
   when: system_wifi_powersave_file.stat.exists
   notify: Reload systemd
+
+- name: Disable HDMI output to save power
+  ansible.builtin.lineinfile:
+    path: /boot/firmware/config.txt
+    regexp: '^hdmi_blanking='
+    line: 'hdmi_blanking=2'
+    state: present
